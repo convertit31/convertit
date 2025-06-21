@@ -1,164 +1,149 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Lock Tool</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PDF Lock/Unlock Tool</title>
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
   <style>
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4faff;
-      color: #333;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      color: #222;
     }
-
-    .container {
-      background-color: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.1);
-      padding: 2rem;
-      max-width: 450px;
-      width: 100%;
-      text-align: center;
-    }
-
-    h1 {
-      color: #007BFF;
-      margin-bottom: 1rem;
-      font-size: 1.8rem;
-    }
-
-    input[type="file"],
-    input[type="password"] {
-      width: 100%;
-      margin: 0.75rem 0;
-      padding: 0.6rem;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-    }
-
-    label {
-      font-weight: 600;
-      display: block;
-      margin-top: 1rem;
-    }
-
-    .button {
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 10px;
-      font-size: 1rem;
-      cursor: pointer;
-      margin-top: 1rem;
-      transition: background-color 0.3s;
-    }
-
-    .button:hover {
-      background-color: #0056b3;
-    }
-
-    .button:disabled {
-      background-color: #a6c8ff;
-      cursor: not-allowed;
-    }
-
-    #status {
-      margin-top: 1rem;
-      font-weight: bold;
-      color: #007BFF;
-    }
-
-    #downloadLink {
-      display: none;
-      margin-top: 1.5rem;
-      text-decoration: none;
-      background-color: #28a745;
-      padding: 0.75rem 1.5rem;
-      border-radius: 10px;
+    header {
+      background-color: #00aaff;
       color: #fff;
-      font-weight: bold;
-      display: inline-block;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
     }
-
-    @media (max-width: 600px) {
-      .container {
-        padding: 1rem;
-        margin: 1rem;
+    main {
+      padding: 2rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    input[type="file"], input[type="password"] {
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+    button {
+      width: 48%;
+      padding: 0.75rem;
+      background-color: #00aaff;
+      border: none;
+      color: #fff;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 0.5rem;
+    }
+    button:hover {
+      background-color: #007acc;
+    }
+    #downloadBtn {
+      width: 100%;
+      background-color: #28a745;
+      margin-top: 1.5rem;
+    }
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    @media screen and (max-width: 600px) {
+      button {
+        width: 100%;
+        margin-top: 1rem;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>PDF Lock Tool</h1>
-    <input type="file" id="pdfInput" accept="application/pdf" />
 
-    <label for="password">Set Password:</label>
-    <input type="password" id="password" placeholder="Enter password to lock PDF" />
+<header>
+  🔒 PDF Lock / Unlock Tool
+</header>
 
-    <button class="button" id="lockBtn" disabled>Lock PDF</button>
-    <div id="status"></div>
-    <a id="downloadLink" download>Download Locked PDF</a>
+<main>
+  <input type="file" id="pdfUpload" accept="application/pdf" />
+  <input type="password" id="password" placeholder="Enter password to lock/unlock" />
+
+  <div class="button-group">
+    <button onclick="lockPDF()">Lock PDF</button>
+    <button onclick="unlockPDF()">Unlock PDF</button>
   </div>
 
-  <script>
-    const pdfInput = document.getElementById('pdfInput');
-    const lockBtn = document.getElementById('lockBtn');
-    const downloadLink = document.getElementById('downloadLink');
-    const passwordInput = document.getElementById('password');
-    const status = document.getElementById('status');
+  <a id="downloadBtn" style="display:none;" download="modified.pdf">Download PDF</a>
+</main>
 
-    let pdfFile;
+<script>
+  let uploadedPDFBytes;
 
-    pdfInput.addEventListener('change', (e) => {
-      pdfFile = e.target.files[0];
-      lockBtn.disabled = !pdfFile;
+  document.getElementById('pdfUpload').addEventListener('change', async function(e) {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+      alert('Please upload a valid PDF file.');
+      return;
+    }
+    uploadedPDFBytes = await file.arrayBuffer();
+    document.getElementById('downloadBtn').style.display = 'none';
+  });
+
+  async function lockPDF() {
+    const password = document.getElementById('password').value.trim();
+    if (!uploadedPDFBytes || !password) {
+      alert("Please upload a PDF and enter a password to lock.");
+      return;
+    }
+
+    const pdfDoc = await PDFLib.PDFDocument.load(uploadedPDFBytes);
+    const copiedDoc = await PDFLib.PDFDocument.create();
+    const pages = await copiedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+    pages.forEach((page) => copiedDoc.addPage(page));
+
+    const pdfBytes = await copiedDoc.save({
+      updateFieldAppearances: true,
+      // pdf-lib cannot encrypt files natively – this simulates locking
     });
 
-    lockBtn.addEventListener('click', async () => {
-      if (!pdfFile) return;
-      const password = passwordInput.value;
-      if (!password) {
-        alert('Please enter a password to lock the PDF.');
-        return;
-      }
+    downloadFile(pdfBytes, 'locked-simulated.pdf');
+  }
 
-      status.textContent = 'Processing...';
+  async function unlockPDF() {
+    const password = document.getElementById('password').value.trim();
+    if (!uploadedPDFBytes || !password) {
+      alert("Please upload a locked PDF and enter the password to unlock.");
+      return;
+    }
 
-      const reader = new FileReader();
-      reader.onload = async function (e) {
-        try {
-          const existingPdfBytes = e.target.result;
+    try {
+      const pdfDoc = await PDFLib.PDFDocument.load(uploadedPDFBytes);
+      const copiedDoc = await PDFLib.PDFDocument.create();
+      const pages = await copiedDoc.copyPages(pdfDoc, pdfDoc.getPageIndices());
+      pages.forEach((page) => copiedDoc.addPage(page));
+      const pdfBytes = await copiedDoc.save();
 
-          // Simulate encryption as pdf-lib doesn't support it natively
-          const blob = new Blob([existingPdfBytes], { type: 'application/pdf' });
-          const filename = pdfFile.name.replace(/\.pdf$/i, '') + '_locked_simulated.pdf';
+      downloadFile(pdfBytes, 'unlocked-simulated.pdf');
+    } catch (error) {
+      alert('Unable to unlock PDF. This only simulates unlocking. For real encryption use server-side processing.');
+    }
+  }
 
-          const url = URL.createObjectURL(blob);
+  function downloadFile(pdfBytes, fileName) {
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.getElementById('downloadBtn');
+    link.href = url;
+    link.download = fileName;
+    link.style.display = 'inline-block';
+    link.textContent = `⬇ Download ${fileName}`;
+  }
+</script>
 
-          downloadLink.href = url;
-          downloadLink.download = filename;
-          downloadLink.style.display = 'inline-block';
-          status.textContent = 'PDF is ready (Note: Lock is simulated in frontend).';
-        } catch (err) {
-          console.error(err);
-          status.textContent = 'Failed to process PDF.';
-        }
-      };
-
-      reader.readAsArrayBuffer(pdfFile);
-    });
-  </script>
 </body>
 </html>
-
-  
-  
