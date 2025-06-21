@@ -1,136 +1,160 @@
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Password Generator</title>
+  <title>Password Generator | ConvertIt</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #eef8ff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #ffffff;
+      color: #333;
+      padding: 20px;
+      max-width: 500px;
+      margin: auto;
     }
 
-    .container {
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
-      max-width: 400px;
-      width: 90%;
+    h1 {
       text-align: center;
+      color: #007BFF;
+      margin-bottom: 1.5rem;
     }
 
-    h2 {
-      color: #007bff;
-      margin-bottom: 20px;
+    label {
+      display: block;
+      margin: 10px 0 5px;
     }
 
-    input[type="number"] {
+    input[type="range"] {
       width: 100%;
-      padding: 10px;
-      font-size: 16px;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
       margin-top: 10px;
+    }
+
+    .password-output {
+      background: #f0f8ff;
+      padding: 10px 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
-    }
-
-    .options {
       margin-top: 15px;
-      text-align: left;
-    }
-
-    .options label {
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    .outputBox {
-      margin-top: 20px;
-      font-size: 18px;
-      font-weight: bold;
-      background: #f4f4f4;
-      padding: 10px;
-      border-radius: 8px;
+      font-size: 1.1rem;
       word-break: break-all;
     }
 
+    .button-group {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
     button {
-      margin-top: 15px;
-      padding: 10px 20px;
-      background-color: #007bff;
+      flex: 1;
+      background-color: #007BFF;
       color: white;
+      padding: 10px;
       border: none;
       border-radius: 8px;
+      font-size: 1rem;
       cursor: pointer;
-      font-size: 16px;
     }
 
     button:hover {
-      background-color: #0056b3;
+      background-color: #005bb5;
+    }
+
+    #copyBtn {
+      background-color: #28a745;
+    }
+
+    #copyBtn:hover {
+      background-color: #218838;
+    }
+
+    @media (max-width: 500px) {
+      .button-group {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Random Password Generator</h2>
 
-    <label for="length">Password Length</label>
-    <input type="number" id="length" min="4" max="50" value="12" />
+  <h1>🔐 Password Generator</h1>
 
-    <div class="options">
-      <label><input type="checkbox" id="includeUpper" checked /> Include Uppercase</label>
-      <label><input type="checkbox" id="includeLower" checked /> Include Lowercase</label>
-      <label><input type="checkbox" id="includeNumbers" checked /> Include Numbers</label>
-      <label><input type="checkbox" id="includeSymbols" checked /> Include Symbols</label>
-    </div>
+  <label for="length">Password Length: <span id="lengthValue">12</span></label>
+  <input type="range" id="length" min="4" max="40" value="12" oninput="document.getElementById('lengthValue').textContent = this.value" />
 
-    <button onclick="generatePassword()">Generate Password</button>
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="uppercase" checked> Include Uppercase Letters (A-Z)</label>
+    <label><input type="checkbox" id="lowercase" checked> Include Lowercase Letters (a-z)</label>
+    <label><input type="checkbox" id="numbers" checked> Include Numbers (0-9)</label>
+    <label><input type="checkbox" id="symbols"> Include Special Characters (!@#$%)</label>
+  </div>
 
-    <div class="outputBox" id="passwordResult"></div>
+  <div class="password-output" id="result">Your password will appear here...</div>
+
+  <div class="button-group">
+    <button onclick="generatePassword()">Generate</button>
+    <button onclick="clearPassword()">Clear</button>
+    <button id="copyBtn" onclick="copyPassword()">Copy</button>
   </div>
 
   <script>
     function generatePassword() {
       const length = parseInt(document.getElementById("length").value);
-      const useUpper = document.getElementById("includeUpper").checked;
-      const useLower = document.getElementById("includeLower").checked;
-      const useNumbers = document.getElementById("includeNumbers").checked;
-      const useSymbols = document.getElementById("includeSymbols").checked;
-      const resultBox = document.getElementById("passwordResult");
+      const includeUpper = document.getElementById("uppercase").checked;
+      const includeLower = document.getElementById("lowercase").checked;
+      const includeNumbers = document.getElementById("numbers").checked;
+      const includeSymbols = document.getElementById("symbols").checked;
 
       const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       const lower = "abcdefghijklmnopqrstuvwxyz";
       const numbers = "0123456789";
-      const symbols = "!@#$%^&*()_+[]{}|;:,.<>?";
+      const symbols = "!@#$%^&*()_+=<>?/";
 
-      let allChars = "";
-      if (useUpper) allChars += upper;
-      if (useLower) allChars += lower;
-      if (useNumbers) allChars += numbers;
-      if (useSymbols) allChars += symbols;
+      let charSet = "";
+      if (includeUpper) charSet += upper;
+      if (includeLower) charSet += lower;
+      if (includeNumbers) charSet += numbers;
+      if (includeSymbols) charSet += symbols;
 
-      if (allChars.length === 0) {
-        resultBox.textContent = "Please select at least one option!";
+      if (!charSet) {
+        alert("Please select at least one character type.");
         return;
       }
 
       let password = "";
       for (let i = 0; i < length; i++) {
-        password += allChars.charAt(Math.floor(Math.random() * allChars.length));
+        const randomIndex = Math.floor(Math.random() * charSet.length);
+        password += charSet[randomIndex];
       }
 
-      resultBox.textContent = password;
+      document.getElementById("result").textContent = password;
+    }
+
+    function clearPassword() {
+      document.getElementById("result").textContent = "Your password will appear here...";
+    }
+
+    function copyPassword() {
+      const result = document.getElementById("result").textContent;
+      if (!result || result === "Your password will appear here...") {
+        alert("No password to copy.");
+        return;
+      }
+      navigator.clipboard.writeText(result).then(() => {
+        alert("Password copied to clipboard!");
+      }).catch(() => {
+        alert("Failed to copy password.");
+      });
     }
   </script>
+
 </body>
 </html>
-
-  
-  
